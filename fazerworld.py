@@ -4,7 +4,7 @@ from tkinter import simpledialog
 from docx.shared import Pt
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.shared import Inches
-from funcoes import mes_atual , calcular_percentual , dia_atual , ano_atual ,formatar_cpf
+from funcoes import mes_atual , calcular_percentual , dia_atual , ano_atual ,formatar_cpf , format_number_in_document
 from servicos_proposta import final_descriptions, final_services
 from docx.enum.text import WD_TAB_ALIGNMENT, WD_PARAGRAPH_ALIGNMENT 
 from docx.enum.table import WD_ALIGN_VERTICAL 
@@ -12,6 +12,7 @@ from fazer_tabela import  criar_tabela_word
 import pyautogui
 from cabecalho_proposta import *
 import os
+from io import BytesIO
 
 
 # Função para adicionar uma linha em branco
@@ -36,11 +37,6 @@ def add_footer(section):
 
 # Criação do documento
 doc = Document()
-
-# Adicionando a capa (Seção 1)
-doc.add_picture('logo.jpg', width=Inches(4.5))  # TODO : aqui alterar tambem
-last_paragraph = doc.paragraphs[-1]
-last_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
 ##################
 cpf_formatado = formatar_cpf(cpf)
 
@@ -48,53 +44,58 @@ cabecalhos = ['ITEM', 'DESCRIÇÃO', 'UNID.', 'QUANT.', 'CUSTO UNITÁRIO', 'CUST
 lista = final_services
 
 ##################
-add_blank_line(doc, size=24)
+def capa_branca():
+    # Adicionando a capa (Seção 1)
+    doc.add_picture('code/proposta_recursos/logo.jpg', width=Inches(4.5))  # TODO : aqui alterar tambem
+    last_paragraph = doc.paragraphs[-1]
+    last_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    add_blank_line(doc, size=24)
 
-title = "PROPOSTA TÉCNICA E ORÇAMENTÁRIA PARA\nPRESTAÇÃO DE SERVIÇOS"
-p = doc.add_paragraph()
-p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-run = p.add_run(title)
-run.font.size = Pt(18)
-run.bold = True
-run.font.name = 'Times New Roman'
+    title = "PROPOSTA TÉCNICA E ORÇAMENTÁRIA PARA\nPRESTAÇÃO DE SERVIÇOS"
+    p = doc.add_paragraph()
+    p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    run = p.add_run(title)
+    run.font.size = Pt(18)
+    run.bold = True
+    run.font.name = 'Times New Roman'
 
-add_blank_line(doc, size=18)
+    add_blank_line(doc, size=18)
 
-subtitle = f"{objeto_serviço}"
-p = doc.add_paragraph()
-p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-run = p.add_run(subtitle)
-run.font.size = Pt(19)
-run.bold = True
-run.font.name = 'Times New Roman'
+    subtitle = f"{objeto_serviço}"
+    p = doc.add_paragraph()
+    p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    run = p.add_run(subtitle)
+    run.font.size = Pt(19)
+    run.bold = True
+    run.font.name = 'Times New Roman'
 
-add_blank_line(doc, size=24)
+    add_blank_line(doc, size=24)
 
-info = f"""
-CLIENTE(S): {nome_proponente}
-IMÓVEL: {denominacao_imovel}
-CIDADE: {municipio}
-"""
-p = doc.add_paragraph()
-p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-run = p.add_run(info)
-run.font.size = Pt(14)
-run.bold = True
-run.font.name = 'Times New Roman'
+    info = f"""
+    CLIENTE(S): {nome_proponente}
+    IMÓVEL: {denominacao_imovel}
+    CIDADE: {municipio}
+    """
+    p = doc.add_paragraph()
+    p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    run = p.add_run(info)
+    run.font.size = Pt(14)
+    run.bold = True
+    run.font.name = 'Times New Roman'
 
-add_blank_line(doc, size=24)
+    add_blank_line(doc, size=24)
 
-footer_info = f"""
-PALMAS - TO
-{mes_atual}, {ano_atual}
-"""
-p = doc.add_paragraph()
-p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-run = p.add_run(footer_info)
-run.font.size = Pt(14)
-run.bold = True
-run.font.name = 'Times New Roman'
-
+    footer_info = f"""
+    PALMAS - TO
+    {mes_atual}, {ano_atual}
+    """
+    p = doc.add_paragraph()
+    p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    run = p.add_run(footer_info)
+    run.font.size = Pt(14)
+    run.bold = True
+    run.font.name = 'Times New Roman'
+capa_branca()
 # Criar nova seção (Seção 2) para o sumário e conteúdo, onde o rodapé será adicionado
 doc.add_section()
 
@@ -253,7 +254,7 @@ for i, (service, description) in enumerate(zip(final_services, final_description
     # Configurar o tab stop
     
     # Adicionar a descrição
-    description_run = p.add_run(f'\t{description}')
+    description_run = p.add_run(f'{description}')
     description_run.font.size = Pt(12)
     description_run.font.name = 'Times New Roman'
     p.paragraph_format.line_spacing = Pt(25)
@@ -561,7 +562,7 @@ run.font.name = 'Times New Roman'
 #add um espaço minimo entre palmas e o resto do texto
 add_blank_line(doc, size=4)
 
-doc.add_picture('agro_passos_assinatura.png', width=Inches(2.5))  # TODO : aqui alterar tambem
+doc.add_picture('code/proposta_recursos/agro_passos_assinatura.png', width=Inches(2.5))  # TODO : aqui alterar tambem
 assinatura_agropassos = doc.paragraphs[-1]
 assinatura_agropassos.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
 add_blank_line(doc, size=3)
@@ -574,14 +575,14 @@ cell_1 = table.cell(0, 0)
 cell_1.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
 paragraph_1 = cell_1.paragraphs[0]
 run_1 = paragraph_1.add_run()
-run_1.add_picture('assinatura_arthur.png', width=Inches(2.5))#TODO : aqui alterar pra planilha do user
+run_1.add_picture('code/proposta_recursos/assinatura_arthur.png', width=Inches(2.5))#TODO : aqui alterar pra planilha do user
 
 # Inserção da segunda imagem na segunda célula
 cell_2 = table.cell(0, 1)
 cell_2.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
 paragraph_2 = cell_2.paragraphs[0]
 run_2 = paragraph_2.add_run()
-run_2.add_picture('assinatura_luan.png', width=Inches(2.5))#TODO : aqui alterar pra planilha do user
+run_2.add_picture('code/proposta_recursos/assinatura_luan.png', width=Inches(2.5))#TODO : aqui alterar pra planilha do user
 doc.save('proposta_tecnica_orcamentaria.docx')# TODO : aqui vai depender de como voce quer salvar em uma pasta especifica
 
 # Abrindo o arquivo Word após salvá-lo
